@@ -1,0 +1,29 @@
+pip install requests
+
+import requests
+
+# Replace with your Page ID and Access Token
+PAGE_ID = "YOUR_PAGE_ID"
+ACCESS_TOKEN = "YOUR_PAGE_ACCESS_TOKEN"
+
+# Message you want to post
+message = "Hello friends! 🚀 This is an automated blog post using Facebook Graph API."
+
+# API endpoint
+url = f"https://graph.facebook.com/{PAGE_ID}/feed"
+
+# Payload
+payload = {
+    "message": message,
+    "access_token": ACCESS_TOKEN
+}
+
+# Send POST request
+response = requests.post(url, data=payload)
+
+# Check response
+if response.status_code == 200:
+    print("✅ Post published successfully!")
+    print("Post ID:", response.json()["id"])
+else:
+    print("❌ Failed to publish post:", response.text)
