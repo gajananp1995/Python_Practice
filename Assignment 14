@@ -1,0 +1,69 @@
+# Server: Multi-client chat with broadcasting
+# chat_server.py
+import socket
+import threading
+
+HOST = "0.0.0.0"  # listen on all interfaces
+PORT = 5000
+
+clients = []  # list of (conn, addr)
+
+def broadcast(message, sender_conn=None):
+    for conn, _ in clients:
+        if conn is not sender_conn:
+            try:
+                conn.sendall(message)
+            except Exception:
+                # Cleanup broken connections
+                try:
+                    conn.close()
+                except:
+                    pass
+                clients[:] = [(c, a) for (c, a) in clients if c is not conn]
+
+def handle_client(conn, addr):
+    try:
+        conn.sendall(b"Welcome! Enter your name: ")
+        name = conn.recv(1024).decode().strip() or f"{addr[0]}:{addr[1]}"
+        join_msg = f"[+] {name} joined the chat\n".encode()
+        print(join_msg.decode().strip())
+        broadcast(join_msg, sender_conn=None)
+
+        while True:
+            data = conn.recv(4096)
+            if not data:
+                break
+            msg = data.decode().strip()
+            if msg.lower() in ("/quit", "/exit"):
+                break
+            full = f"{name}: {msg}\n".encode()
+            print(full.decode().strip())
+            broadcast(full, sender_conn=conn)
+    except Exception as e:
+        print(f"[!] Error with {addr}: {e}")
+    finally:
+        # Remove and notify
+        try:
+            clients[:] = [(c, a) for (c, a) in clients if c is not conn]
+            conn.close()
+        except:
+            pass
+        leave_msg = f"[-] {addr[0]}:{addr[1]} left the chat\n".encode()
+        broadcast(leave_msg, sender_conn=None)
+        print(leave_msg.decode().strip())
+
+def main():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind((HOST, PORT))
+        server.listen(10)
+        print(f"Server listening on {HOST}:{PORT}")
+
+        while True:
+            conn, addr = server.accept()
+            clients.append((conn, addr))
+            t = threading.Thread(target=handle_client, args=(conn, addr), daemon=True)
+            t.start()
+
+if __name__ == "__main__":
+    main()
