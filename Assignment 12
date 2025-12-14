@@ -1,0 +1,28 @@
+pip install selenium
+
+# Launch Browser
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+
+# Locate Elements
+driver = webdriver.Chrome()  # or Firefox, Edge
+driver.get("https://example.com")
+element = driver.find_element(By.XPATH, "//h1")
+print(element.text)
+
+# Extract Data
+title = driver.find_element(By.TAG_NAME, "h1").text
+links = [a.get_attribute("href") for a in driver.find_elements(By.TAG_NAME, "a")]
+print("Page Title:", title)
+print("Links:", links)
+
+# Handle Dynamic Content
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+wait = WebDriverWait(driver, 10)
+price = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "price"))).text
+print("Price:", price)
+
+# Close Browser
+driver.quit()
